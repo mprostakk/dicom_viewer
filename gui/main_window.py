@@ -1,9 +1,16 @@
 import sys
 import logging
+import numpy as np
+
 
 from PyQt5 import QtGui
-from PyQt5.QtWidgets import QAction, QLabel, QScrollArea, QMenu, QSizePolicy, QApplication, QMainWindow
+from PyQt5.QtCore import Qt
+from PyQt5.QtWidgets import QAction, QLabel, QScrollArea, QHBoxLayout, QMenu, QWidget, QSizePolicy, QApplication, QMainWindow, QSlider, QHBoxLayout
 
+from matplotlib.backends.backend_qt5agg import FigureCanvas
+
+from dicom_app import dicom_reader
+from matplotlib.figure import Figure
 
 class DicomViewer(QMainWindow):
 
@@ -14,16 +21,39 @@ class DicomViewer(QMainWindow):
 
     def __init__(self):
         super(DicomViewer, self).__init__()
+        self.test_dicom = dicom_reader.get_dicom()
+        self.initUI()
 
-        self.image_label = QLabel()
-        self.image_label.setBackgroundRole(QtGui.QPalette.Base)
-        self.image_label.setSizePolicy(QSizePolicy.Ignored, QSizePolicy.Ignored)
-        self.image_label.setScaledContents(True)
+    def initUI(self):
 
-        self.scroll_area = QScrollArea()
-        self.scroll_area.setBackgroundRole(QtGui.QPalette.Base)
-        self.scroll_area.setWidget(self.image_label)
-        self.setCentralWidget(self.scroll_area)
+        layout = QHBoxLayout()
+
+        # slider
+        sld = QSlider(Qt.Vertical, self)
+        sld.setGeometry(40, 30, 30, 200)
+        sld.setRange(0, 100) # len(self.test_dicom)
+        sld.valueChanged[int].connect(self.changeValue)
+        layout.addWidget(sld)
+
+        # Label with number
+        self.label = QLabel("0", self)
+        self.label.setStyleSheet('QLabel { background: #007AA5; border-radius: 3px;}')
+        self.label.setAlignment(Qt.AlignCenter | Qt.AlignVCenter)
+        self.label.setMinimumWidth(80)
+        layout.addWidget(self.label)
+
+        # image
+        self.figure = Figure(figsize=(5, 3))
+        self.canvas = FigureCanvas(self.figure)
+        self.ax = self.figure.subplots()
+        self.ax.imshow(dicom_reader.get_image_from_dicom(self.test_dicom, 0))
+        self.ax.set_axis_off()
+        layout.addWidget(self.canvas)
+
+        # widget
+        widget = QWidget()
+        widget.setLayout(layout)
+        self.setCentralWidget(widget)
 
         self.create_actions()
         self.create_menu()
@@ -31,6 +61,11 @@ class DicomViewer(QMainWindow):
         self.setWindowTitle("Dicom Viewer")
         self.setMinimumWidth(800)
         self.setMinimumHeight(600)
+
+    def changeValue(self, value):
+        # print(str(value))
+        # self.ax.imshow(dicom_reader.get_image_from_dicom(self.test_dicom, value))
+        self.label.setText(str(value))
 
     def create_actions(self):
         self.test_action = QAction("&Test...", self, shortcut="Ctrl+T", triggered=self.test)
@@ -50,3 +85,4 @@ class DicomViewer(QMainWindow):
     def on_exit(self):
         logging.info('Closing Dicom Viewer')
         self.close()
+
