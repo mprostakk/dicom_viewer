@@ -32,7 +32,7 @@ class DicomViewer(QMainWindow):
         sld = QSlider(Qt.Vertical, self)
         sld.setGeometry(40, 30, 30, 200)
         sld.setRange(0, 100) # len(self.test_dicom)
-        sld.valueChanged[int].connect(self.changeValue)
+        sld.valueChanged[int].connect(self.change_value)
         layout.addWidget(sld)
 
         # Label with number
@@ -62,9 +62,7 @@ class DicomViewer(QMainWindow):
         self.setMinimumWidth(800)
         self.setMinimumHeight(600)
 
-    def changeValue(self, value):
-        # print(str(value))
-        # self.ax.imshow(dicom_reader.get_image_from_dicom(self.test_dicom, value))
+    def change_value(self, value):
         self.label.setText(str(value))
 
     def create_actions(self):
@@ -76,7 +74,6 @@ class DicomViewer(QMainWindow):
         self.file_menu.addAction(self.test_action)
         self.file_menu.addSeparator()
         self.file_menu.addAction(self.action_exit)
-
         self.menuBar().addMenu(self.file_menu)
 
     def test(self):

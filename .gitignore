@@ -1,6 +1,4 @@
 venv/
 .idea/
 .vscode/settings.json
-dicom_app/__pycache__/__init__.cpython-37.pyc
-dicom_app/__pycache__/dicom_reader.cpython-37.pyc
 *.pyc
