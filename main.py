@@ -3,8 +3,6 @@ import os
 import logging
 
 from PyQt5 import QtWidgets
-import matplotlib.pyplot as plt
-
 from gui.main_window import DicomViewer
 
 

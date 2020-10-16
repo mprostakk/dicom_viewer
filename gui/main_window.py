@@ -1,11 +1,12 @@
 import logging
 
-from dicom_app import dicom_reader
 from matplotlib.backends.backend_qt5agg import FigureCanvas
 from matplotlib.figure import Figure
 from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QAction, QLabel, QMenu, QWidget, QMainWindow, \
     QSlider, QHBoxLayout
+
+from dicom_app import dicom_reader
 
 
 class DicomViewer(QMainWindow):

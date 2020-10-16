@@ -1,5 +1,4 @@
 import pydicom
-
 from pydicom.data import get_testdata_files
 
 
@@ -8,8 +7,8 @@ def get_dicom(filename='CT_small.dcm'):
     return files
 
 
-def get_image_from_dicom(dicon_files, index):
-    file = dicon_files[index]
+def get_image_from_dicom(dicom_files, index):
+    file = dicom_files[index]
     dataset = pydicom.dcmread(file)
     arr = dataset.pixel_array
     return arr
