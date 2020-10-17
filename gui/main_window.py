@@ -1,12 +1,14 @@
 import logging
 
-from matplotlib.backends.backend_qt5agg import FigureCanvas
 from matplotlib.figure import Figure
-from PyQt5.QtCore import Qt
-from PyQt5.QtWidgets import QAction, QLabel, QMenu, QWidget, QMainWindow, \
-    QSlider, QHBoxLayout
+from matplotlib.backends.backend_qt5agg import FigureCanvas
+from mpl_toolkits.mplot3d.art3d import Poly3DCollection
+from PyQt5.QtWidgets import QMainWindow, QPushButton, QMenu, QAction
+from skimage import measure
 
-from dicom_app import dicom_reader
+from .object_factory import create_text_input, create_slider, create_layout, \
+    create_menu, create_actions, create_widget
+from dicom_app.dicom_reader import DicomReader
 
 
 class DicomViewer(QMainWindow):
