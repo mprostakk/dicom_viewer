@@ -132,3 +132,17 @@ class DicomViewer(QMainWindow):
         logging.info('Closing Dicom Viewer')
         self.close()
 
+    def x_slider_change_value(self, value) -> None:
+        self.ax.imshow(self.dicom_reader.image_3d[:, :, value])
+
+        self.canvas_ax.draw()
+
+    def y_slider_change_value(self, value) -> None:
+        self.sag.imshow(self.dicom_reader.image_3d[:, value, :])
+
+        self.canvas_sag.draw()
+
+    def z_slider_change_value(self, value) -> None:
+        self.cor.imshow(self.dicom_reader.image_3d[value, :, :])
+
+        self.canvas_cor.draw()
