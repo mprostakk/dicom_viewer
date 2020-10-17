@@ -16,18 +16,54 @@ class DicomViewer(QMainWindow):
 
     def __init__(self):
         super(DicomViewer, self).__init__()
-        self.test_dicom = dicom_reader.get_dicom()
-        self.init_ui()
 
-    def init_ui(self):
-        self.layout = QHBoxLayout()
-        self.init_slider()
-        self.init_label()
-        self.init_image()
-        self.init_widget()
+        self.dicom_reader = DicomReader()
+        self.layout = create_layout()
 
-        self.create_actions()
-        self.create_menu()
+        # subplots
+        self.ax = None
+        self.sag = None
+        self.cor = None
+
+        # sliders
+        self.x_slider = create_slider(self, self.x_slider_change_value)
+        self.y_slider = create_slider(self, self.y_slider_change_value)
+        self.z_slider = create_slider(self, self.z_slider_change_value)
+        self.layout.addWidget(self.x_slider)
+        self.layout.addWidget(self.y_slider)
+        self.layout.addWidget(self.z_slider)
+
+        # images
+        self.figure_ax = Figure()
+        self.figure_sag = Figure()
+        self.figure_cor = Figure()
+        self.canvas_ax = FigureCanvas(self.figure_ax)
+        self.canvas_sag = FigureCanvas(self.figure_sag)
+        self.canvas_cor = FigureCanvas(self.figure_cor)
+        self.layout.addWidget(self.canvas_ax)
+        self.layout.addWidget(self.canvas_sag)
+        self.layout.addWidget(self.canvas_cor)
+
+        # plot Button
+        self.plot_button = QPushButton()
+        self.plot_button.clicked.connect(self.plot)
+        self.layout.addWidget(self.plot_button)
+
+        # 3d plot button
+        self.plot_button_3d = QPushButton()
+        self.plot_button_3d.clicked.connect(self.plot_3d)
+        self.layout.addWidget(self.plot_button_3d)
+
+        # text input
+        self.text_input = create_text_input()
+        self.layout.addWidget(self.text_input)
+
+        main_widget = create_widget()
+        main_widget.setLayout(self.layout)
+        self.setCentralWidget(main_widget)
+
+        self.action_exit = create_actions(self)
+        self.menuBar().addMenu(create_menu(self))
 
         self.setWindowTitle("Dicom Viewer")
         self.setMinimumWidth(800)
