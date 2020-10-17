@@ -66,52 +66,45 @@ class DicomViewer(QMainWindow):
         self.menuBar().addMenu(create_menu(self))
 
         self.setWindowTitle("Dicom Viewer")
-        self.setMinimumWidth(800)
-        self.setMinimumHeight(600)
+        self.setMinimumWidth(1240)
+        self.setMinimumHeight(720)
 
-    def init_slider(self):
-        slider = QSlider(Qt.Vertical, self)
-        slider.setGeometry(40, 30, 30, 200)
-        slider.setRange(0, 100) # len(self.test_dicom)
-        slider.valueChanged[int].connect(self.change_value)
-        self.layout.addWidget(slider)
+    def plot(self) -> None:
+        """Plot 3 axes of 3d image.
 
-    def init_label(self):
-        self.label = QLabel("0", self)
-        self.label.setStyleSheet(
-            'QLabel { background: #007AA5; border-radius: 3px;}')
-        self.label.setAlignment(Qt.AlignCenter | Qt.AlignVCenter)
-        self.label.setMinimumWidth(80)
-        self.layout.addWidget(self.label)
+        If path to directory with .dcm files is not provided, do nothing.
 
-    def init_image(self):
-        self.figure = Figure(figsize=(5, 3))
-        self.canvas = FigureCanvas(self.figure)
-        self.ax = self.figure.subplots()
-        self.ax.imshow(dicom_reader.get_image_from_dicom(self.test_dicom, 0))
-        self.ax.set_axis_off()
-        self.layout.addWidget(self.canvas)
+        Returns:
+            None.
+        """
+        if self.text_input.text() == '':
+            return
 
-    def init_widget(self):
-        widget = QWidget()
-        widget.setLayout(self.layout)
-        self.setCentralWidget(widget)
+        self.dicom_reader.load_dicom(self.text_input.text())
 
-    def change_value(self, value):
-        self.label.setText(str(value))
+        self.figure_ax.clear()
+        self.figure_sag.clear()
+        self.figure_cor.clear()
 
-    def create_menu(self):
-        self.file_menu = QMenu("&File", self)
-        self.file_menu.addAction(self.test_action)
-        self.file_menu.addSeparator()
-        self.file_menu.addAction(self.action_exit)
-        self.menuBar().addMenu(self.file_menu)
+        self.ax = self.figure_ax.add_subplot(111)
+        self.sag = self.figure_sag.add_subplot(111)
+        self.cor = self.figure_cor.add_subplot(111)
 
-    def create_actions(self):
-        self.test_action = QAction(
-            "&Test...", self, shortcut="Ctrl+T", triggered=self.test)
-        self.action_exit = QAction(
-            "&Exit...", self, shortcut="Alt+F4", triggered=self.on_exit)
+        self.ax.imshow(self.dicom_reader.image_3d[:, :, 0])
+        self.sag.imshow(self.dicom_reader.image_3d[:, 0, :])
+        self.cor.imshow(self.dicom_reader.image_3d[0, :, :].T)
+
+        self.ax.set_aspect(self.dicom_reader.ax_aspect)
+        self.sag.set_aspect(self.dicom_reader.sag_aspect)
+        self.cor.set_aspect(self.dicom_reader.cor_aspect)
+
+        self.x_slider.setRange(0, self.dicom_reader.image_shape[2] - 1)
+        self.y_slider.setRange(0, self.dicom_reader.image_shape[1] - 1)
+        self.z_slider.setRange(0, self.dicom_reader.image_shape[0] - 1)
+
+        self.canvas_ax.draw()
+        self.canvas_sag.draw()
+        self.canvas_cor.draw()
 
     def test(self):
         logging.info('Test')
