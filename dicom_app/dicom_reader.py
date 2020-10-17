@@ -1,5 +1,22 @@
+import glob
+import logging
+import typing as tp
+
 import pydicom
-from pydicom.data import get_testdata_files
+import numpy as np
+
+
+class DicomReader:
+    def __init__(self):
+        self.last_dir = ''
+        self.image_3d = None
+        self.image_shape = None
+        self.ax_aspect = 0
+        self.sag_aspect = 0
+        self.cor_aspect = 0
+
+    def load_dicom(self, directory: str) -> None:
+        self.create_3d_array(self.load_dicom_files(directory))
 
     def load_dicom_files(self, directory: str) -> tp.List[pydicom.FileDataset]:
         files = []
