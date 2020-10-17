@@ -106,10 +106,27 @@ class DicomViewer(QMainWindow):
         self.canvas_sag.draw()
         self.canvas_cor.draw()
 
-    def test(self):
-        logging.info('Test')
+    def plot_3d(self) -> None:
+        self.figure_ax.clear()
 
-    def on_exit(self):
+        threshold = 300
+        image_3d_transposed = self.dicom_reader.image_3d.transpose(2, 1, 0)
+        vertices, faces, normals, values = \
+            measure.marching_cubes(image_3d_transposed, threshold)
+
+        self.ax = self.figure_ax.add_subplot(111, projection='3d')
+        mesh = Poly3DCollection(vertices[faces], alpha=0.1)
+        face_color = [0.4, 0.4, 1]
+        mesh.set_facecolor(face_color)
+
+        self.ax.add_collection3d(mesh)
+        self.ax.set_xlim(0, image_3d_transposed.shape[0])
+        self.ax.set_ylim(0, image_3d_transposed.shape[1])
+        self.ax.set_zlim(0, image_3d_transposed.shape[2])
+
+        self.canvas_ax.draw()
+
+    def on_exit(self) -> None:
         logging.info('Closing Dicom Viewer')
         self.close()
 
