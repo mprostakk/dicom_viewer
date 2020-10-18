@@ -9,7 +9,8 @@ pydicom==2.0.0
 pyparsing==2.4.7
 PyQt5==5.15.1
 PyQt5-sip==12.8.1
-pyqt5-tools==5.15.1.1.7.4
+pyqt5-tools==5.15.1.1.7.5
 python-dateutil==2.8.1
 python-dotenv==0.14.0
 six==1.15.0
+scikit-image

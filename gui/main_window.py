@@ -1,12 +1,14 @@
 import logging
 
-from matplotlib.backends.backend_qt5agg import FigureCanvas
 from matplotlib.figure import Figure
-from PyQt5.QtCore import Qt
-from PyQt5.QtWidgets import QAction, QLabel, QMenu, QWidget, QMainWindow, \
-    QSlider, QHBoxLayout
+from matplotlib.backends.backend_qt5agg import FigureCanvas
+from mpl_toolkits.mplot3d.art3d import Poly3DCollection
+from PyQt5.QtWidgets import QMainWindow, QPushButton, QMenu, QAction
+from skimage import measure
 
-from dicom_app import dicom_reader
+from .object_factory import create_text_input, create_slider, create_layout, \
+    create_menu, create_actions, create_widget
+from dicom_app.dicom_reader import DicomReader
 
 
 class DicomViewer(QMainWindow):
@@ -16,71 +18,131 @@ class DicomViewer(QMainWindow):
 
     def __init__(self):
         super(DicomViewer, self).__init__()
-        self.test_dicom = dicom_reader.get_dicom()
-        self.init_ui()
 
-    def init_ui(self):
-        self.layout = QHBoxLayout()
-        self.init_slider()
-        self.init_label()
-        self.init_image()
-        self.init_widget()
+        self.dicom_reader = DicomReader()
+        self.layout = create_layout()
 
-        self.create_actions()
-        self.create_menu()
+        # subplots
+        self.axial = None
+        self.sagittal = None
+        self.coronal = None
+
+        # sliders
+        self.x_slider = create_slider(self, self.x_slider_change_value)
+        self.y_slider = create_slider(self, self.y_slider_change_value)
+        self.z_slider = create_slider(self, self.z_slider_change_value)
+        self.layout.addWidget(self.x_slider)
+        self.layout.addWidget(self.y_slider)
+        self.layout.addWidget(self.z_slider)
+
+        # images
+        self.figure_axial = Figure()
+        self.figure_sagittal = Figure()
+        self.figure_coronal = Figure()
+        self.canvas_axial = FigureCanvas(self.figure_axial)
+        self.canvas_sagittal = FigureCanvas(self.figure_sagittal)
+        self.canvas_coronal = FigureCanvas(self.figure_coronal)
+        self.layout.addWidget(self.canvas_axial)
+        self.layout.addWidget(self.canvas_sagittal)
+        self.layout.addWidget(self.canvas_coronal)
+
+        # plot Button
+        self.plot_button = QPushButton()
+        self.plot_button.clicked.connect(self.plot)
+        self.layout.addWidget(self.plot_button)
+
+        # 3d plot button
+        self.plot_button_3d = QPushButton()
+        self.plot_button_3d.clicked.connect(self.plot_3d)
+        self.layout.addWidget(self.plot_button_3d)
+
+        # text input
+        self.text_input = create_text_input()
+        self.layout.addWidget(self.text_input)
+
+        main_widget = create_widget()
+        main_widget.setLayout(self.layout)
+        self.setCentralWidget(main_widget)
+
+        self.action_exit = create_actions(self)
+        self.menuBar().addMenu(create_menu(self))
 
         self.setWindowTitle("Dicom Viewer")
-        self.setMinimumWidth(800)
-        self.setMinimumHeight(600)
+        self.setMinimumWidth(1240)
+        self.setMinimumHeight(720)
 
-    def init_slider(self):
-        slider = QSlider(Qt.Vertical, self)
-        slider.setGeometry(40, 30, 30, 200)
-        slider.setRange(0, 100) # len(self.test_dicom)
-        slider.valueChanged[int].connect(self.change_value)
-        self.layout.addWidget(slider)
+    def plot(self) -> None:
+        """Plot 3 axes of 3d image.
 
-    def init_label(self):
-        self.label = QLabel("0", self)
-        self.label.setStyleSheet(
-            'QLabel { background: #007AA5; border-radius: 3px;}')
-        self.label.setAlignment(Qt.AlignCenter | Qt.AlignVCenter)
-        self.label.setMinimumWidth(80)
-        self.layout.addWidget(self.label)
+        If path to directory with .dcm files is not provided, do nothing.
 
-    def init_image(self):
-        self.figure = Figure(figsize=(5, 3))
-        self.canvas = FigureCanvas(self.figure)
-        self.ax = self.figure.subplots()
-        self.ax.imshow(dicom_reader.get_image_from_dicom(self.test_dicom, 0))
-        self.ax.set_axis_off()
-        self.layout.addWidget(self.canvas)
+        Returns:
+            None.
+        """
+        if self.text_input.text() == '':
+            return
 
-    def init_widget(self):
-        widget = QWidget()
-        widget.setLayout(self.layout)
-        self.setCentralWidget(widget)
+        self.dicom_reader.load_dicom(self.text_input.text())
 
-    def change_value(self, value):
-        self.label.setText(str(value))
+        self.figure_axial.clear()
+        self.figure_sagittal.clear()
+        self.figure_coronal.clear()
 
-    def create_menu(self):
-        self.file_menu = QMenu("&File", self)
-        self.file_menu.addAction(self.test_action)
-        self.file_menu.addSeparator()
-        self.file_menu.addAction(self.action_exit)
-        self.menuBar().addMenu(self.file_menu)
+        self.axial = self.figure_axial.add_subplot(111)
+        self.sagittal = self.figure_sagittal.add_subplot(111)
+        self.coronal = self.figure_coronal.add_subplot(111)
 
-    def create_actions(self):
-        self.test_action = QAction(
-            "&Test...", self, shortcut="Ctrl+T", triggered=self.test)
-        self.action_exit = QAction(
-            "&Exit...", self, shortcut="Alt+F4", triggered=self.on_exit)
+        self.axial.imshow(self.dicom_reader.image_3d[:, :, 0])
+        self.sagittal.imshow(self.dicom_reader.image_3d[:, 0, :])
+        self.coronal.imshow(self.dicom_reader.image_3d[0, :, :].T)
 
-    def test(self):
-        logging.info('Test')
+        self.axial.set_aspect(self.dicom_reader.axial_aspect)
+        self.sagittal.set_aspect(self.dicom_reader.sagittal_aspect)
+        self.coronal.set_aspect(self.dicom_reader.coronal_aspect)
 
-    def on_exit(self):
+        self.x_slider.setRange(0, self.dicom_reader.image_shape[2] - 1)
+        self.y_slider.setRange(0, self.dicom_reader.image_shape[1] - 1)
+        self.z_slider.setRange(0, self.dicom_reader.image_shape[0] - 1)
+
+        self.canvas_axial.draw()
+        self.canvas_sagittal.draw()
+        self.canvas_coronal.draw()
+
+    def plot_3d(self) -> None:
+        self.figure_axial.clear()
+
+        threshold = 300
+        image_3d_transposed = self.dicom_reader.image_3d.transpose(2, 1, 0)
+        vertices, faces, normals, values = \
+            measure.marching_cubes(image_3d_transposed, threshold)
+
+        self.axial = self.figure_ax.add_subplot(111, projection='3d')
+        mesh = Poly3DCollection(vertices[faces], alpha=0.1)
+        face_color = [0.4, 0.4, 1]
+        mesh.set_facecolor(face_color)
+
+        self.axial.add_collection3d(mesh)
+        self.axial.set_xlim(0, image_3d_transposed.shape[0])
+        self.axial.set_ylim(0, image_3d_transposed.shape[1])
+        self.axial.set_zlim(0, image_3d_transposed.shape[2])
+
+        self.canvas_ax.draw()
+
+    def on_exit(self) -> None:
         logging.info('Closing Dicom Viewer')
         self.close()
 
+    def x_slider_change_value(self, value) -> None:
+        self.ax.imshow(self.dicom_reader.image_3d[:, :, value])
+
+        self.canvas_ax.draw()
+
+    def y_slider_change_value(self, value) -> None:
+        self.sag.imshow(self.dicom_reader.image_3d[:, value, :])
+
+        self.canvas_sag.draw()
+
+    def z_slider_change_value(self, value) -> None:
+        self.cor.imshow(self.dicom_reader.image_3d[value, :, :])
+
+        self.canvas_cor.draw()
