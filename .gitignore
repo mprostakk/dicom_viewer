@@ -2,3 +2,6 @@ venv/
 .idea/
 .vscode/settings.json
 *.pyc
+
+# Example dicom folder
+example/
