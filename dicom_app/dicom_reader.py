@@ -11,9 +11,9 @@ class DicomReader:
         self.last_dir = ''
         self.image_3d = None
         self.image_shape = None
-        self.ax_aspect = 0
-        self.sag_aspect = 0
-        self.cor_aspect = 0
+        self.axial_aspect = 0
+        self.sagittal_aspect = 0
+        self.coronal_aspect = 0
 
     def load_dicom(self, directory: str) -> None:
         self.create_3d_array(self.load_dicom_files(directory))
@@ -33,9 +33,9 @@ class DicomReader:
         # calculate pixel aspects
         pixel_spacing = slices[0].PixelSpacing
         slice_thickness = slices[0].SliceThickness
-        self.ax_aspect = pixel_spacing[1] / pixel_spacing[0]
-        self.sag_aspect = pixel_spacing[1] / slice_thickness
-        self.cor_aspect = slice_thickness / pixel_spacing[0]
+        self.axial_aspect = pixel_spacing[1] / pixel_spacing[0]
+        self.sagittal_aspect = pixel_spacing[1] / slice_thickness
+        self.coronal_aspect = slice_thickness / pixel_spacing[0]
 
         # create 3D array
         self.image_shape = list(slices[0].pixel_array.shape)

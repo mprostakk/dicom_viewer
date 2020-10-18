@@ -23,9 +23,9 @@ class DicomViewer(QMainWindow):
         self.layout = create_layout()
 
         # subplots
-        self.ax = None
-        self.sag = None
-        self.cor = None
+        self.axial = None
+        self.sagittal = None
+        self.coronal = None
 
         # sliders
         self.x_slider = create_slider(self, self.x_slider_change_value)
@@ -36,15 +36,15 @@ class DicomViewer(QMainWindow):
         self.layout.addWidget(self.z_slider)
 
         # images
-        self.figure_ax = Figure()
-        self.figure_sag = Figure()
-        self.figure_cor = Figure()
-        self.canvas_ax = FigureCanvas(self.figure_ax)
-        self.canvas_sag = FigureCanvas(self.figure_sag)
-        self.canvas_cor = FigureCanvas(self.figure_cor)
-        self.layout.addWidget(self.canvas_ax)
-        self.layout.addWidget(self.canvas_sag)
-        self.layout.addWidget(self.canvas_cor)
+        self.figure_axial = Figure()
+        self.figure_sagittal = Figure()
+        self.figure_coronal = Figure()
+        self.canvas_axial = FigureCanvas(self.figure_axial)
+        self.canvas_sagittal = FigureCanvas(self.figure_sagittal)
+        self.canvas_coronal = FigureCanvas(self.figure_coronal)
+        self.layout.addWidget(self.canvas_axial)
+        self.layout.addWidget(self.canvas_sagittal)
+        self.layout.addWidget(self.canvas_coronal)
 
         # plot Button
         self.plot_button = QPushButton()
@@ -84,47 +84,47 @@ class DicomViewer(QMainWindow):
 
         self.dicom_reader.load_dicom(self.text_input.text())
 
-        self.figure_ax.clear()
-        self.figure_sag.clear()
-        self.figure_cor.clear()
+        self.figure_axial.clear()
+        self.figure_sagittal.clear()
+        self.figure_coronal.clear()
 
-        self.ax = self.figure_ax.add_subplot(111)
-        self.sag = self.figure_sag.add_subplot(111)
-        self.cor = self.figure_cor.add_subplot(111)
+        self.axial = self.figure_axial.add_subplot(111)
+        self.sagittal = self.figure_sagittal.add_subplot(111)
+        self.coronal = self.figure_coronal.add_subplot(111)
 
-        self.ax.imshow(self.dicom_reader.image_3d[:, :, 0])
-        self.sag.imshow(self.dicom_reader.image_3d[:, 0, :])
-        self.cor.imshow(self.dicom_reader.image_3d[0, :, :].T)
+        self.axial.imshow(self.dicom_reader.image_3d[:, :, 0])
+        self.sagittal.imshow(self.dicom_reader.image_3d[:, 0, :])
+        self.coronal.imshow(self.dicom_reader.image_3d[0, :, :].T)
 
-        self.ax.set_aspect(self.dicom_reader.ax_aspect)
-        self.sag.set_aspect(self.dicom_reader.sag_aspect)
-        self.cor.set_aspect(self.dicom_reader.cor_aspect)
+        self.axial.set_aspect(self.dicom_reader.axial_aspect)
+        self.sagittal.set_aspect(self.dicom_reader.sagittal_aspect)
+        self.coronal.set_aspect(self.dicom_reader.coronal_aspect)
 
         self.x_slider.setRange(0, self.dicom_reader.image_shape[2] - 1)
         self.y_slider.setRange(0, self.dicom_reader.image_shape[1] - 1)
         self.z_slider.setRange(0, self.dicom_reader.image_shape[0] - 1)
 
-        self.canvas_ax.draw()
-        self.canvas_sag.draw()
-        self.canvas_cor.draw()
+        self.canvas_axial.draw()
+        self.canvas_sagittal.draw()
+        self.canvas_coronal.draw()
 
     def plot_3d(self) -> None:
-        self.figure_ax.clear()
+        self.figure_axial.clear()
 
         threshold = 300
         image_3d_transposed = self.dicom_reader.image_3d.transpose(2, 1, 0)
         vertices, faces, normals, values = \
             measure.marching_cubes(image_3d_transposed, threshold)
 
-        self.ax = self.figure_ax.add_subplot(111, projection='3d')
+        self.axial = self.figure_ax.add_subplot(111, projection='3d')
         mesh = Poly3DCollection(vertices[faces], alpha=0.1)
         face_color = [0.4, 0.4, 1]
         mesh.set_facecolor(face_color)
 
-        self.ax.add_collection3d(mesh)
-        self.ax.set_xlim(0, image_3d_transposed.shape[0])
-        self.ax.set_ylim(0, image_3d_transposed.shape[1])
-        self.ax.set_zlim(0, image_3d_transposed.shape[2])
+        self.axial.add_collection3d(mesh)
+        self.axial.set_xlim(0, image_3d_transposed.shape[0])
+        self.axial.set_ylim(0, image_3d_transposed.shape[1])
+        self.axial.set_zlim(0, image_3d_transposed.shape[2])
 
         self.canvas_ax.draw()
 
