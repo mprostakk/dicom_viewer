@@ -1,3 +1,4 @@
+import os
 import glob
 import logging
 import typing as tp
@@ -15,12 +16,14 @@ class DicomReader:
         self.sagittal_aspect = 0
         self.coronal_aspect = 0
 
-    def load_dicom(self, directory: str) -> None:
-        self.create_3d_array(self.load_dicom_files(directory))
+    def load_from_directory(self, directory: str) -> None:
+        self.create_3d_array(self._load_from_directory(directory))
 
-    def load_dicom_files(self, directory: str) -> tp.List[pydicom.FileDataset]:
+    @staticmethod
+    def _load_from_directory(directory: str) -> tp.List[pydicom.FileDataset]:
+        dicom_files_path = os.path.join(directory, '*.dcm')
         files = []
-        for file_name in glob.glob(directory, recursive=False):
+        for file_name in glob.glob(dicom_files_path, recursive=False):
             logging.info(file_name)
             files.append(pydicom.dcmread(file_name))
 
@@ -41,5 +44,5 @@ class DicomReader:
         self.image_shape = list(slices[0].pixel_array.shape)
         self.image_shape.append(len(slices))
         self.image_3d = np.zeros(self.image_shape)
-        for i, slice in enumerate(slices):
-            self.image_3d[:, :, i] = slice.pixel_array
+        for i, image_slice in enumerate(slices):
+            self.image_3d[:, :, i] = image_slice.pixel_array

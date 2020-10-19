@@ -3,24 +3,22 @@ import logging
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_qt5agg import FigureCanvas
 from mpl_toolkits.mplot3d.art3d import Poly3DCollection
-from PyQt5.QtWidgets import QMainWindow, QPushButton, QMenu, QAction
+from PyQt5.QtWidgets import QMainWindow, QPushButton, QFileDialog
 from skimage import measure
 
-from .object_factory import create_text_input, create_slider, create_layout, \
+from .object_factory import create_slider, create_layout, \
     create_menu, create_actions, create_widget
 from dicom_app.dicom_reader import DicomReader
 
 
 class DicomViewer(QMainWindow):
-    file_menu: QMenu
-    test_action: QAction
-    action_exit: QAction
-
     def __init__(self):
         super(DicomViewer, self).__init__()
 
         self.dicom_reader = DicomReader()
         self.layout = create_layout()
+
+        self.opened_directory: str = ''
 
         # subplots
         self.axial = None
@@ -56,15 +54,11 @@ class DicomViewer(QMainWindow):
         self.plot_button_3d.clicked.connect(self.plot_3d)
         self.layout.addWidget(self.plot_button_3d)
 
-        # text input
-        self.text_input = create_text_input()
-        self.layout.addWidget(self.text_input)
-
         main_widget = create_widget()
         main_widget.setLayout(self.layout)
         self.setCentralWidget(main_widget)
 
-        self.action_exit = create_actions(self)
+        self.action_exit, self.action_open_directory = create_actions(self)
         self.menuBar().addMenu(create_menu(self))
 
         self.setWindowTitle("Dicom Viewer")
@@ -79,10 +73,8 @@ class DicomViewer(QMainWindow):
         Returns:
             None.
         """
-        if self.text_input.text() == '':
-            return
 
-        self.dicom_reader.load_dicom(self.text_input.text())
+        self.dicom_reader.load_from_directory(self.opened_directory)
 
         self.figure_axial.clear()
         self.figure_sagittal.clear()
@@ -132,17 +124,24 @@ class DicomViewer(QMainWindow):
         logging.info('Closing Dicom Viewer')
         self.close()
 
-    def x_slider_change_value(self, value) -> None:
-        self.ax.imshow(self.dicom_reader.image_3d[:, :, value])
+    def on_directory_open(self) -> None:
+        directory = str(QFileDialog.getExistingDirectory(self, "Select directory"))
+        logging.info(f'Selected directory: {directory}')
+        self.opened_directory = directory
+        if self.opened_directory:
+            self.plot()
 
-        self.canvas_ax.draw()
+    def x_slider_change_value(self, value) -> None:
+        self.axial.imshow(self.dicom_reader.image_3d[:, :, value])
+
+        self.canvas_axial.draw()
 
     def y_slider_change_value(self, value) -> None:
-        self.sag.imshow(self.dicom_reader.image_3d[:, value, :])
+        self.sagittal.imshow(self.dicom_reader.image_3d[:, value, :])
 
-        self.canvas_sag.draw()
+        self.canvas_sagittal.draw()
 
     def z_slider_change_value(self, value) -> None:
-        self.cor.imshow(self.dicom_reader.image_3d[value, :, :])
+        self.coronal.imshow(self.dicom_reader.image_3d[value, :, :])
 
-        self.canvas_cor.draw()
+        self.canvas_coronal.draw()
