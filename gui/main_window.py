@@ -1,7 +1,9 @@
+import cv2
+import numpy as np
 import logging
 
-from matplotlib.figure import Figure
-from matplotlib.backends.backend_qt5agg import FigureCanvas
+# from matplotlib.figure import Figure
+# from matplotlib.backends.backend_qt5agg import FigureCanvas
 from mpl_toolkits.mplot3d.art3d import Poly3DCollection
 from PyQt5.QtWidgets import QMainWindow, QPushButton, QFileDialog
 from skimage import measure
@@ -9,6 +11,8 @@ from skimage import measure
 from .object_factory import create_slider, create_layout, \
     create_menu, create_actions, create_widget
 from dicom_app.dicom_reader import DicomReader
+
+from PyQt5 import QtGui, QtCore, QtWidgets
 
 
 class DicomViewer(QMainWindow):
@@ -34,15 +38,22 @@ class DicomViewer(QMainWindow):
         self.layout.addWidget(self.z_slider)
 
         # images
-        self.figure_axial = Figure()
-        self.figure_sagittal = Figure()
-        self.figure_coronal = Figure()
-        self.canvas_axial = FigureCanvas(self.figure_axial)
-        self.canvas_sagittal = FigureCanvas(self.figure_sagittal)
-        self.canvas_coronal = FigureCanvas(self.figure_coronal)
-        self.layout.addWidget(self.canvas_axial)
-        self.layout.addWidget(self.canvas_sagittal)
-        self.layout.addWidget(self.canvas_coronal)
+        # self.figure_axial = Figure()
+        # self.figure_sagittal = Figure()
+        # self.figure_coronal = Figure()
+        # self.canvas_axial = FigureCanvas(self.figure_axial)
+        # self.canvas_sagittal = FigureCanvas(self.figure_sagittal)
+        # self.canvas_coronal = FigureCanvas(self.figure_coronal)
+        # self.layout.addWidget(self.canvas_axial)
+        # self.layout.addWidget(self.canvas_sagittal)
+        # self.layout.addWidget(self.canvas_coronal)
+
+        self.image_frame = QtWidgets.QLabel()
+        self.layout.addWidget(self.image_frame)
+
+        # display_image_widget = DisplayImageWidget()
+        # display_image_widget.show()
+        # self.layout.addWidget(display_image_widget)
 
         # plot Button
         self.plot_button = QPushButton()
@@ -74,8 +85,6 @@ class DicomViewer(QMainWindow):
             None.
         """
 
-        self.dicom_reader.load_from_directory(self.opened_directory)
-
         self.figure_axial.clear()
         self.figure_sagittal.clear()
         self.figure_coronal.clear()
@@ -91,10 +100,6 @@ class DicomViewer(QMainWindow):
         self.axial.set_aspect(self.dicom_reader.axial_aspect)
         self.sagittal.set_aspect(self.dicom_reader.sagittal_aspect)
         self.coronal.set_aspect(self.dicom_reader.coronal_aspect)
-
-        self.x_slider.setRange(0, self.dicom_reader.image_shape[2] - 1)
-        self.y_slider.setRange(0, self.dicom_reader.image_shape[1] - 1)
-        self.z_slider.setRange(0, self.dicom_reader.image_shape[0] - 1)
 
         self.canvas_axial.draw()
         self.canvas_sagittal.draw()
@@ -128,20 +133,36 @@ class DicomViewer(QMainWindow):
         directory = str(QFileDialog.getExistingDirectory(self, "Select directory"))
         logging.info(f'Selected directory: {directory}')
         self.opened_directory = directory
+
         if self.opened_directory:
-            self.plot()
+            self.dicom_reader.load_from_directory(self.opened_directory)
+            self.x_slider.setRange(0, self.dicom_reader.image_shape[2] - 1)
+            self.y_slider.setRange(0, self.dicom_reader.image_shape[1] - 1)
+            self.z_slider.setRange(0, self.dicom_reader.image_shape[0] - 1)
 
     def x_slider_change_value(self, value) -> None:
-        self.axial.imshow(self.dicom_reader.image_3d[:, :, value])
+        self.image = self.dicom_reader.image_3d[:, :, value]
 
-        self.canvas_axial.draw()
+        h, w = self.image.shape
+        self.image = self.image.copy()
+
+        image_max = np.amax(self.image)
+        image_min = np.amin(self.image)
+        m = 1.0 / (image_max - image_min)
+        m *= 255
+
+        self.image = self.image * m
+        self.image = np.require(self.image, np.uint8, 'C')
+        self.image = cv2.cvtColor(self.image, cv2.COLOR_GRAY2RGB)
+        self.image = QtGui.QImage(self.image.data, h, w, 3 * h, QtGui.QImage.Format_RGB888).rgbSwapped()
+        self.image_frame.setPixmap(QtGui.QPixmap.fromImage(self.image))
 
     def y_slider_change_value(self, value) -> None:
-        self.sagittal.imshow(self.dicom_reader.image_3d[:, value, :])
-
-        self.canvas_sagittal.draw()
+        # self.sagittal.imshow(self.dicom_reader.image_3d[:, value, :])
+        # self.canvas_sagittal.draw()
+        pass
 
     def z_slider_change_value(self, value) -> None:
-        self.coronal.imshow(self.dicom_reader.image_3d[value, :, :])
-
-        self.canvas_coronal.draw()
+        # self.coronal.imshow(self.dicom_reader.image_3d[value, :, :])
+        # self.canvas_coronal.draw()
+        pass
