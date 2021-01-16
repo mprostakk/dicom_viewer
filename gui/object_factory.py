@@ -12,8 +12,8 @@ def create_layout() -> QHBoxLayout:
     return layout
 
 
-def create_slider(self, value_changed_callback: tp.Callable) -> QSlider:
-    slider = QSlider(Qt.Vertical, self)
+def create_slider(parent, value_changed_callback: tp.Callable) -> QSlider:
+    slider = QSlider(Qt.Vertical, parent)
     slider.setGeometry(40, 30, 30, 200)
     slider.setRange(0, 100)
 
@@ -22,8 +22,8 @@ def create_slider(self, value_changed_callback: tp.Callable) -> QSlider:
     return slider
 
 
-def create_label(self) -> QLabel:
-    label = QLabel("0", self)
+def create_label(parent) -> QLabel:
+    label = QLabel("0", parent)
     label.setStyleSheet(
         'QLabel { background: #007AA5; border-radius: 3px;}')
     label.setAlignment(Qt.AlignCenter | Qt.AlignVCenter)
@@ -38,23 +38,20 @@ def create_widget() -> QWidget:
     return widget
 
 
-def create_menu(self) -> QMenu:
-    file_menu = QMenu("&File", self)
+def create_menu(parent) -> QMenu:
+    file_menu = QMenu("&File", parent)
     file_menu.addSeparator()
-    file_menu.addAction(self.action_exit)
+    file_menu.addAction(parent.action_open_directory)
+    file_menu.addAction(parent.action_exit)
 
     return file_menu
 
 
-def create_text_input() -> QLineEdit:
-    text_input = QLineEdit()
-    text_input.setFont(QFont("Mono", 10))
-
-    return text_input
-
-
-def create_actions(self):
+def create_actions(parent):
     action_exit = QAction(
-        "&Exit...", self, shortcut="Alt+F4", triggered=self.on_exit)
+        "&Exit...", parent, shortcut="Alt+F4", triggered=parent.on_exit)
 
-    return action_exit
+    action_open_directory = QAction(
+        "&Open Directory", parent, shortcut="Ctrl+o", triggered=parent.on_directory_open)
+
+    return action_exit, action_open_directory
