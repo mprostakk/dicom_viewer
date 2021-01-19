@@ -8,6 +8,7 @@ from PyQt5.QtWidgets import QMainWindow, QFileDialog
 from .object_factory import create_slider, create_layout, \
     create_menu, create_actions, create_widget
 from dicom_app.dicom_reader import DicomReader
+from gui.QtImageViewer import QtImageViewer
 
 from PyQt5 import QtGui, QtCore, QtWidgets
 
@@ -31,9 +32,12 @@ class DicomViewer(QMainWindow):
         self.layout.addWidget(self.y_slider)
         self.layout.addWidget(self.z_slider)
 
-        self.image_frame_x = QtWidgets.QLabel()
-        self.image_frame_y = QtWidgets.QLabel()
-        self.image_frame_z = QtWidgets.QLabel()
+        self.image_frame_x = QtImageViewer()
+        self.image_frame_y = QtImageViewer()
+        self.image_frame_z = QtImageViewer()
+        self.image_frame_x.aspectRatioMode = QtCore.Qt.KeepAspectRatio
+        self.image_frame_y.aspectRatioMode = QtCore.Qt.KeepAspectRatio
+        self.image_frame_z.aspectRatioMode = QtCore.Qt.KeepAspectRatio
         self.layout.addWidget(self.image_frame_x)
         self.layout.addWidget(self.image_frame_y)
         self.layout.addWidget(self.image_frame_z)
@@ -58,14 +62,16 @@ class DicomViewer(QMainWindow):
         logging.info(f'Selected directory: {directory}')
         self.opened_directory = directory
 
-        self.image_frame_x.setMovie(self.movie)
-        self.image_frame_y.setMovie(self.movie)
-        self.image_frame_z.setMovie(self.movie)
+        # self.image_frame_x.setMovie(self.movie)
+        # self.image_frame_y.setMovie(self.movie)
+        # self.image_frame_z.setMovie(self.movie)
 
-        self.movie.start()
+        # self.movie.start()
 
-        t = threading.Thread(target=self.open_directory)
-        t.start()
+        # t = threading.Thread(target=self.open_directory)
+        # t.start()
+
+        self.open_directory()
 
     def open_directory(self) -> None:
         if self.opened_directory:
@@ -79,11 +85,12 @@ class DicomViewer(QMainWindow):
             self.z_slider_change_value(0)
 
         else:
-            self.image_frame_x.clear()
-            self.image_frame_y.clear()
-            self.image_frame_z.clear()
+            pass
+            # self.image_frame_x.clear()
+            # self.image_frame_y.clear()
+            # self.image_frame_z.clear()
 
-        self.movie.stop()
+        # self.movie.stop()
 
     def x_slider_change_value(self, value) -> None:
         self.image = self.dicom_reader.image_3d[:, :, value]
@@ -101,7 +108,7 @@ class DicomViewer(QMainWindow):
         self.image = cv2.cvtColor(self.image, cv2.COLOR_GRAY2RGB)
         self.image = QtGui.QImage(self.image.data, w, h, w * 3,
                                   QtGui.QImage.Format_RGB888).rgbSwapped()
-        self.image_frame_x.setPixmap(QtGui.QPixmap.fromImage(self.image))
+        self.image_frame_x.setImage(self.image)
 
     def y_slider_change_value(self, value) -> None:
         self.image = self.dicom_reader.image_3d[:, value, :]
@@ -119,7 +126,7 @@ class DicomViewer(QMainWindow):
         self.image = cv2.cvtColor(self.image, cv2.COLOR_GRAY2RGB)
         self.image = QtGui.QImage(self.image.data, w, h, w * 3,
                                   QtGui.QImage.Format_RGB888).rgbSwapped()
-        self.image_frame_y.setPixmap(QtGui.QPixmap.fromImage(self.image))
+        self.image_frame_y.setImage(self.image)
 
     def z_slider_change_value(self, value) -> None:
         self.image = self.dicom_reader.image_3d[value, :, :].T
@@ -137,4 +144,4 @@ class DicomViewer(QMainWindow):
         self.image = cv2.cvtColor(self.image, cv2.COLOR_GRAY2RGB)
         self.image = QtGui.QImage(self.image.data, w, h, w * 3,
                                   QtGui.QImage.Format_RGB888).rgbSwapped()
-        self.image_frame_z.setPixmap(QtGui.QPixmap.fromImage(self.image))
+        self.image_frame_z.setImage(self.image)
