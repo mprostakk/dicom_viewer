@@ -42,6 +42,10 @@ class DicomViewer(QMainWindow):
         self.layout.addWidget(self.image_frame_y)
         self.layout.addWidget(self.image_frame_z)
 
+        self.brightness: int = 0
+        self.brightness_slider = create_slider(self, self.brightness_slider_change_value)
+        self.layout.addWidget(self.brightness_slider)
+
         main_widget = create_widget()
         main_widget.setLayout(self.layout)
         self.setCentralWidget(main_widget)
@@ -84,6 +88,7 @@ class DicomViewer(QMainWindow):
             self.y_slider_change_value(0)
             self.z_slider_change_value(0)
 
+            self.brightness_slider.setValue(50)
         else:
             pass
             # self.image_frame_x.clear()
@@ -92,56 +97,64 @@ class DicomViewer(QMainWindow):
 
         # self.movie.stop()
 
+    def brightness_slider_change_value(self, value) -> None:
+        self.brightness = int((value - 50) * 2)
+        self.update_frames()
+
     def x_slider_change_value(self, value) -> None:
-        self.image = self.dicom_reader.image_3d[:, :, value]
-
-        h, w = self.image.shape
-        self.image = self.image.copy()
-
-        image_max = np.amax(self.image)
-        image_min = np.amin(self.image)
-        m = 1.0 / (image_max - image_min)
-        m *= 255
-
-        self.image = self.image * m
-        self.image = np.require(self.image, np.uint8, 'C')
-        self.image = cv2.cvtColor(self.image, cv2.COLOR_GRAY2RGB)
-        self.image = QtGui.QImage(self.image.data, w, h, w * 3,
-                                  QtGui.QImage.Format_RGB888).rgbSwapped()
-        self.image_frame_x.setImage(self.image)
+        self.image_x = self.dicom_reader.image_3d[:, :, value]
+        self.update_x()
 
     def y_slider_change_value(self, value) -> None:
-        self.image = self.dicom_reader.image_3d[:, value, :]
-
-        h, w = self.image.shape
-        self.image = self.image.copy()
-
-        image_max = np.amax(self.image)
-        image_min = np.amin(self.image)
-        m = 1.0 / (image_max - image_min)
-        m *= 255
-
-        self.image = self.image * m
-        self.image = np.require(self.image, np.uint8, 'C')
-        self.image = cv2.cvtColor(self.image, cv2.COLOR_GRAY2RGB)
-        self.image = QtGui.QImage(self.image.data, w, h, w * 3,
-                                  QtGui.QImage.Format_RGB888).rgbSwapped()
-        self.image_frame_y.setImage(self.image)
+        self.image_y = self.dicom_reader.image_3d[:, value, :]
+        self.update_y()
 
     def z_slider_change_value(self, value) -> None:
-        self.image = self.dicom_reader.image_3d[value, :, :].T
+        self.image_z = self.dicom_reader.image_3d[value, :, :].T
+        self.update_z()
 
-        h, w = self.image.shape
-        self.image = self.image.copy()
+    def update_frames(self):
+        self.update_x()
+        self.update_y()
+        self.update_z()
 
-        image_max = np.amax(self.image)
-        image_min = np.amin(self.image)
+    def update_x(self):
+        self.image_x_qt = self.get_qt_image(self.image_x)
+        self.image_frame_x.setImage(self.image_x_qt)
+
+    def update_y(self):
+        self.image_y_qt = self.get_qt_image(self.image_y)
+        self.image_frame_y.setImage(self.image_y_qt)
+
+    def update_z(self):
+        self.image_z_qt = self.get_qt_image(self.image_z)
+        self.image_frame_z.setImage(self.image_z_qt)
+
+    def get_qt_image(self, image_) -> QtGui.QImage:
+        h, w = image_.shape
+        image = image_.copy()
+        image_max = np.amax(image)
+        image_min = np.amin(image)
         m = 1.0 / (image_max - image_min)
         m *= 255
+        image = image * m
+        image = np.require(image, np.uint8, 'C')
 
-        self.image = self.image * m
-        self.image = np.require(self.image, np.uint8, 'C')
-        self.image = cv2.cvtColor(self.image, cv2.COLOR_GRAY2RGB)
-        self.image = QtGui.QImage(self.image.data, w, h, w * 3,
-                                  QtGui.QImage.Format_RGB888).rgbSwapped()
-        self.image_frame_z.setImage(self.image)
+        image = self.add_brightness_to_image(image)
+
+        image = cv2.cvtColor(image, cv2.COLOR_GRAY2RGB)
+        image = QtGui.QImage(
+            image.data, w, h, w * 3,
+            QtGui.QImage.Format_RGB888).rgbSwapped()
+
+        return image
+
+    def add_brightness_to_image(self, image):
+        if self.brightness < 0:
+            image = image - (-self.brightness)
+        else:
+            image = image + self.brightness
+
+        image[image < 0] = 0
+        image[image > 255] = 255
+        return image
