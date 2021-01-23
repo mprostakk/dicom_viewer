@@ -11,6 +11,7 @@ from dicom_app.dicom_reader import DicomReader
 from gui.QtImageViewer import QtImageViewer
 
 from PyQt5 import QtGui, QtCore, QtWidgets
+from PyQt5.QtGui import QImage, QPainter
 
 
 class DicomViewer(QMainWindow):
@@ -38,6 +39,7 @@ class DicomViewer(QMainWindow):
         self.image_frame_x.aspectRatioMode = QtCore.Qt.KeepAspectRatio
         self.image_frame_y.aspectRatioMode = QtCore.Qt.KeepAspectRatio
         self.image_frame_z.aspectRatioMode = QtCore.Qt.KeepAspectRatio
+
         self.layout.addWidget(self.image_frame_x)
         self.layout.addWidget(self.image_frame_y)
         self.layout.addWidget(self.image_frame_z)
@@ -50,7 +52,7 @@ class DicomViewer(QMainWindow):
         main_widget.setLayout(self.layout)
         self.setCentralWidget(main_widget)
 
-        self.action_exit, self.action_open_directory = create_actions(self)
+        self.action_exit, self.action_open_directory, self.on_save = create_actions(self)
         self.menuBar().addMenu(create_menu(self))
 
         self.setWindowTitle("Dicom Viewer")
@@ -60,6 +62,40 @@ class DicomViewer(QMainWindow):
     def on_exit(self) -> None:
         logging.info('Closing Dicom Viewer')
         self.close()
+    
+    def on_save(self) -> None:
+        logging.info('Saving...')
+        if hasattr(self, 'image_x'):
+            x = self.get_qt_image(self.image_x)
+            logging.info(f'Image: {x}')
+            self.save()
+        else:
+            logging.info(f'No image')
+
+    def save(self): 
+        filePath, _ = QFileDialog.getSaveFileName(self, "Save Image", "", 
+                         "PNG(*.png);;JPEG(*.jpg *.jpeg);;All Files(*.*) ") 
+  
+        if filePath == "": 
+            return
+          
+        result = self.getThreeQImages()
+        result.save(filePath)
+
+    def getThreeQImages(self):
+        resultWidth = self.image_x_qt.width() + self.image_y_qt.width() + self.image_z_qt.width()
+        maxHeight = max(self.image_x_qt.height(), self.image_y_qt.height(), self.image_z_qt.height())
+
+        result = QImage(resultWidth, maxHeight, QImage.Format_RGB888)
+        painter = QPainter(result)
+        
+        painter.drawImage(0, (maxHeight-self.image_x_qt.height())/2, self.image_x_qt)
+        painter.drawImage(self.image_x_qt.width(), (maxHeight-self.image_y_qt.height())/2, self.image_y_qt)
+        painter.drawImage(self.image_x_qt.width() + self.image_y_qt.width(), (maxHeight-self.image_z_qt.height())/2, self.image_z_qt)
+        return result
+        
+        # painter.drawImage(x1, y1, image1); // xi, yi is the position for imagei
+        # painter.drawImage(x2, y2, image2);
 
     def on_directory_open(self) -> None:
         directory = str(QFileDialog.getExistingDirectory(self, "Select directory"))
@@ -84,9 +120,13 @@ class DicomViewer(QMainWindow):
             self.y_slider.setRange(0, self.dicom_reader.image_shape[1] - 1)
             self.z_slider.setRange(0, self.dicom_reader.image_shape[0] - 1)
 
-            self.x_slider_change_value(0)
-            self.y_slider_change_value(0)
-            self.z_slider_change_value(0)
+            self.x_slider.setValue((self.dicom_reader.image_shape[2])/2)
+            self.y_slider.setValue((self.dicom_reader.image_shape[1])/2)
+            self.z_slider.setValue((self.dicom_reader.image_shape[0])/2)
+
+            self.x_slider_change_value(int(self.dicom_reader.image_shape[2]/2))
+            self.y_slider_change_value(int(self.dicom_reader.image_shape[1]/2))
+            self.z_slider_change_value(int(self.dicom_reader.image_shape[0]/2))
 
             self.brightness_slider.setValue(50)
         else:

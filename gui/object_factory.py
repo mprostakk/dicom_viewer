@@ -42,6 +42,7 @@ def create_menu(parent) -> QMenu:
     file_menu = QMenu("&File", parent)
     file_menu.addSeparator()
     file_menu.addAction(parent.action_open_directory)
+    file_menu.addAction(parent.on_save)
     file_menu.addAction(parent.action_exit)
 
     return file_menu
@@ -54,4 +55,7 @@ def create_actions(parent):
     action_open_directory = QAction(
         "&Open Directory", parent, shortcut="Ctrl+o", triggered=parent.on_directory_open)
 
-    return action_exit, action_open_directory
+    action_save_view = QAction(
+        "&Save view", parent, shortcut="Ctrl+s", triggered=parent.on_save)
+
+    return action_exit, action_open_directory, action_save_view
