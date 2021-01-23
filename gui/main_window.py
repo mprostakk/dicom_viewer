@@ -150,11 +150,5 @@ class DicomViewer(QMainWindow):
         return image
 
     def add_brightness_to_image(self, image):
-        if self.brightness < 0:
-            image = image - (-self.brightness)
-        else:
-            image = image + self.brightness
-
-        image[image < 0] = 0
-        image[image > 255] = 255
+        cv2.add(image, self.brightness, image)
         return image
