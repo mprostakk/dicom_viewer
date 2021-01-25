@@ -1,18 +1,18 @@
 import sys
-from PyQt5 import QtWidgets, QtCore
-
+import os
 import logging
 
-
-def main():
-    app = QtWidgets.QApplication(sys.argv)
-    widget = QtWidgets.QWidget()
-    widget.resize(400, 200)
-    widget.setWindowTitle("This is PyQt Widget example")
-    widget.show()
-    exit(app.exec_())
+from PyQt5 import QtWidgets
+from gui.main_window import DicomViewer
 
 
 if __name__ == '__main__':
+    logging.basicConfig(level=os.environ.get("LOGLEVEL", "INFO"))
     logging.info('Starting Dicom Viewer')
-    main()
+
+    app = QtWidgets.QApplication(sys.argv)
+
+    dicomViewer = DicomViewer()
+    dicomViewer.show()
+
+    sys.exit(app.exec_())
